@@ -1,5 +1,7 @@
 #include <SDL.h>
 #include <stdio.h>
+#include <string>
+#include <cmath>
 
 //Screen dimension constants
 const int SCREEN_WIDTH = 640;
@@ -8,10 +10,8 @@ const int SCREEN_HEIGHT = 480;
 //The window we'll be rendering to
 SDL_Window* gWindow = NULL;
 
-//The surface contained by the window
-SDL_Surface* gScreenSurface = NULL;
+SDL_Renderer* gRenderer = NULL;
 
-SDL_Surface* gImageSurface = NULL;
 
 // Set up SDL Window and Screen Surface
 bool init() {
@@ -29,7 +29,14 @@ bool init() {
 			success = false;
 		} else {
 			// Get window surface
-			gScreenSurface = SDL_GetWindowSurface(gWindow);
+			//gScreenSurface = SDL_GetWindowSurface(gWindow);
+			gRenderer = SDL_CreateRenderer(gWindow, -1, SDL_RENDERER_ACCELERATED);
+			if (gRenderer == NULL) {
+				printf("Unable to create renderer: SDL_Error: %s\n", SDL_GetError());
+				success = false;
+			} else {
+				SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
+			}
 		}
 	}
 
@@ -39,20 +46,13 @@ bool init() {
 // Load required image files
 bool loadMedia() {
 	bool success = true;
-
-	gImageSurface = SDL_LoadBMP("img/kagemusha.bmp");
-	if (gImageSurface == NULL) {
-		printf("Unable to load image %s: SDL_Error: %s\n", "img/kagemusha.bmp", SDL_GetError());
-		success = false;
-	}
-
 	return success;
 }
 
 // Free surfaces and destroy window
 void close() {
-	SDL_FreeSurface(gImageSurface);
-	gImageSurface = NULL;
+	/*SDL_FreeSurface(gImageSurface);
+	gImageSurface = NULL;*/
 
 	SDL_DestroyWindow(gWindow);
 	gWindow = NULL;
@@ -70,12 +70,26 @@ int main( int argc, char* args[] )
 		} else {
 			// Continue
 
-			// Apply the image
-			SDL_BlitSurface(gImageSurface, NULL, gScreenSurface, NULL);
+			bool quit = false;
+			SDL_Event e;
 
-			SDL_UpdateWindowSurface(gWindow);
+			while (!quit) {
+				while (SDL_PollEvent(&e) != 0) {
+					if (e.type == SDL_QUIT) {
+						quit = true;
+					}
+				}
+				
+				SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
+				SDL_RenderClear(gRenderer);
 
-			SDL_Delay(5000);
+				SDL_Rect fillRect = {SCREEN_WIDTH / 4, SCREEN_HEIGHT / 4, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2};
+				SDL_SetRenderDrawColor(gRenderer, 0xFF, 0x00, 0x00, 0xFF);
+				SDL_RenderFillRect(gRenderer, &fillRect);
+
+				SDL_RenderPresent(gRenderer);
+
+			}
 		}
 	}
 	close();
